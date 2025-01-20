@@ -13,23 +13,11 @@ app.use(cors({ optionsSuccessStatus: 200 })); // some legacy browsers choke on 2
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static("public"));
 
-app.use("/api/:date", (req, res, next) => {
-  console.log("Params: ", req.params.date);
-  let date = req.params.date;
-  if (date.includes("-")) {
-    date = new Date(date);
-    if (date.toString() === "Invalid Date") {
-      req.error = "Invalid Date";
-    }
-  } else {
-    date = new Date(parseInt(date));
-    if (date.toString() === "Invalid Date") {
-      req.error = "Invalid Date";
-    }
-  }
-  req.date = date;
-  next();
-});
+// app.use("/api/:date", (req, res, next) => {
+//   console.log("Params: ", req.params.date);
+
+//   next();
+// });
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", function (req, res) {
@@ -42,10 +30,22 @@ app.get("/api/hello", function (req, res) {
 });
 
 app.get("/api/:date", (req, res) => {
-  if (req.error) {
-    res.json({ error: req.error });
+  let dateString = req.params.date_string;
+
+  //A 4 digit number is a valid ISO-8601 for the beginning of that year
+  //5 digits or more must be a unix time, until we reach a year 10,000 problem
+  if (/\d{5,}/.test(dateString)) {
+    let dateInt = parseInt(dateString);
+    //Date regards numbers as unix timestamps, strings are processed differently
+    res.json({ unix: dateString, utc: new Date(dateInt).toUTCString() });
   } else {
-    res.json({ unix: req.date.getTime(), utc: req.date.toUTCString() });
+    let dateObject = new Date(dateString);
+
+    if (dateObject.toString() === "Invalid Date") {
+      res.json({ error: "Invalid Date" });
+    } else {
+      res.json({ unix: dateObject.valueOf(), utc: dateObject.toUTCString() });
+    }
   }
 });
 
