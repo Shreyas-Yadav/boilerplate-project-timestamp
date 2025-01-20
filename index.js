@@ -14,21 +14,19 @@ app.use(cors({ optionsSuccessStatus: 200 })); // some legacy browsers choke on 2
 app.use(express.static("public"));
 
 app.use("/api/:date", (req, res, next) => {
+  console.log("Params: ", req.params.date);
   let date = req.params.date;
   if (date.includes("-")) {
-    try {
-      date = new Date(date);
-    } catch (error) {
+    date = new Date(date);
+    if (date.toString() === "Invalid Date") {
       req.error = "Invalid Date";
     }
   } else {
-    try {
-      date = new Date(parseInt(date));
-    } catch (error) {
+    date = new Date(parseInt(date));
+    if (date.toString() === "Invalid Date") {
       req.error = "Invalid Date";
     }
   }
-
   req.date = date;
   next();
 });
@@ -43,18 +41,18 @@ app.get("/api/hello", function (req, res) {
   res.json({ greeting: "hello API" });
 });
 
+app.get("/api/:date", (req, res) => {
+  if (req.error) {
+    res.json({ error: req.error });
+  } else {
+    res.json({ unix: req.date.getTime(), utc: req.date.toUTCString() });
+  }
+});
+
 app.get("/api", (req, res) => {
   let date = new Date();
   res.json({ unix: date.getTime(), utc: date.toUTCString() });
 });
-
-app.get("/api/:date", (req, res) => {
-  if (req.error) {
-    res.json({ error: req.error });
-  }
-  res.json({ unix: req.date.getTime(), utc: req.date.toUTCString() });
-});
-
 // Listen on port set in environment variable or default to 3000
 var listener = app.listen(process.env.PORT || 3000, function () {
   console.log("Your app is listening on port " + listener.address().port);
